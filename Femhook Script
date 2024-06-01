@@ -1,0 +1,441 @@
+--// READ MIT IF YOU EVER WANT TO USE THIS \\--
+
+--// MADE BY FEMBOYHOOK TEAM \\--
+
+local UIKey = Enum.KeyCode.Insert
+
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/vy-xa/femboyhook/main/backup.lua"))()
+WindowYSize = 545
+WindowTheme = Color3.fromRGB(255, 0, 255)
+Window = Library:Window("fem", WindowTheme, WindowYSize)
+Window:Label("hook", Color3.fromRGB(207, 58, 255))
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = game.Workspace.CurrentCamera
+
+local UIVis = true
+
+local function toggleGUI()
+    UIVis = not UIVis
+    local gui = game.CoreGui:FindFirstChild("fem")
+    if gui then
+        gui.Enabled = UIVis
+    end
+end
+
+local function updateKeybind(newValue)
+    local newKey = Enum.KeyCode[newValue]
+    if newKey then
+        UIKey = newKey
+    else
+        warn("Invalid key entered: " .. newValue)
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == UIKey then
+        toggleGUI()
+    end
+end)
+
+AIMTAB = Window:Tab("AIM")
+CamSec = AIMTAB:Section("Camlock")
+FovSec = AIMTAB:Section("FOV")
+
+local aimPartName = "Head"
+local CamLockEnabled = false
+local aimKeyDown = false
+local aimKey = Enum.UserInputType.MouseButton2
+local useFov = false
+
+local FOVCircle = Drawing.new("Circle")
+do
+    FOVCircle.Transparency = 1
+    FOVCircle.Visible = false
+    FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+    FOVCircle.Radius = 0
+    local teamCheck = false
+local fov = 150
+local smoothing = 1
+end
+
+local function aim()
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer then return end
+
+    local character = localPlayer.Character
+    if not character then return end
+
+    local players = Players:GetPlayers()
+
+    local nearestPlayer = nil
+    local nearestDistance = math.huge
+
+    local mousePosition = UserInputService:GetMouseLocation()
+
+    for _, player in ipairs(players) do
+        if player ~= localPlayer and player.Character then
+            local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character[aimPartName].Position)
+            if onScreen then
+                local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
+                if (not useFov or distance <= FOVCircle.Radius) and distance < nearestDistance then
+                    nearestPlayer = player
+                    nearestDistance = distance
+                end
+            end
+        end
+    end
+
+    if nearestPlayer then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestPlayer.Character[aimPartName].Position)
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == aimKey or input.KeyCode == aimKey then
+        aimKeyDown = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == aimKey or input.KeyCode == aimKey then
+        aimKeyDown = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if CamLockEnabled and aimKeyDown then
+        aim()
+    end
+end)
+
+CamSec:Toggle("Enabled", function(Value)
+    CamLockEnabled = Value
+end)
+
+CamSec:Toggle("Use FOV", function(Value)
+    useFov = Value
+end)
+
+FovSec:Slider("Radius", 0, 1000, function(Value)
+    FOVCircle.Radius = Value
+end)
+
+CamSec:Textbox("Hotkey", function(Value)
+    if Value == "LMB" or "MB1" then
+        aimKey = Enum.UserInputType.MouseButton1
+    elseif Value == "RMB" or "MB2" then
+        aimKey = Enum.UserInputType.MouseButton2
+    else
+        local newKey = Enum.KeyCode[Value]
+        if newKey then
+            aimKey = newKey
+        else
+            warn("Invalid key entered: " .. Value)
+        end
+    end
+end)
+
+FovSec:Toggle("Visible", function(Value)
+    FOVCircle.Visible = Value
+    FOVCircle.Position = workspace.CurrentCamera.ViewportSize/2
+end)
+
+FovSec:Slider("Radius", 1000, 0, function(Value)
+    FOVCircle.Radius = Value
+end)
+
+FovSec:Color("Color", function(Value)
+    FOVCircle.Color = Value
+end)
+
+CamSec:Textbox("Aim Part", function(Value)
+    if Value == "Head" or "head" then
+        aimPartName = "Head"
+    elseif Value == "Torso" or "Body" or "torso" or "body" then
+        aimPartName = "Torso"
+    elseif Value == "HumanoidRootPart" or "humanoidrootpart" then
+        aimPartName = "HumanoidRootPart"
+    elseif Value == "LeftArm" or "Left Arm" or "leftarm" or "left arm" then
+        aimPartName = "LeftArm"
+    elseif Value == "Right Arm" or "Right Arm" or "rightarm" or "right arm" then
+        aimPartName = "RightArm"
+    end
+end)
+
+local ToolESP = false
+local ToolESPColor = Color3.fromRGB(255, 0, 255)
+local PileESP = false
+local PileESPColor = Color3.fromRGB(255, 0, 255)
+local CashESP = false
+local CashESPColor = Color3.fromRGB(255, 0, 255)
+local PlayerESP = false
+local PlayerESPColor = Color3.fromRGB(255, 0, 255)
+local ShopESP = false
+local ShopESPColor = Color3.fromRGB(255, 0, 255)
+
+local SelfESP = false
+
+ESPTAB = Window:Tab("ESP")
+Tool = ESPTAB:Section("Tool ESP")
+Tool:Toggle("Enabled", function(Value)
+    ToolESP = Value
+    if not ToolESP then
+        for _, tool in pairs(game.Workspace.Filter.SpawnedTools:GetChildren()) do
+            if tool:FindFirstChild("ESP") then
+                tool.ESP:Destroy()
+            end
+        end
+    end
+end)
+Tool:Color("Color", function(Value)
+    ToolESPColor = Value
+end)
+
+Cash = ESPTAB:Section("Cash ESP")
+Cash:Toggle("Enabled", function(Value)
+    CashESP = Value
+    if not CashESP then
+        for _, cash in pairs(game.Workspace.Filter.SpawnedBread:GetChildren()) do
+            if cash:FindFirstChild("ESP") then
+                cash.ESP:Destroy()
+            end
+        end
+    end
+end)
+Cash:Color("Color", function(Value)
+    CashESPColor = Value
+end)
+
+PlayersEsp = ESPTAB:Section("Player ESP")
+PlayersEsp:Toggle("Enabled", function(Value)
+    PlayerESP = Value
+    if not PlayerESP then
+        for _, player in pairs(game.Workspace.Characters:GetChildren()) do
+            if not SelfESP and player ~= game.Players.LocalPlayer then
+                if player:FindFirstChild("ESP") then
+                    player.ESP:Destroy()
+                end
+            end
+        end
+    end
+end)
+PlayersEsp:Toggle("Show self", function(Value)
+    SelfESP = Value
+end)
+PlayersEsp:Color("Color", function(Value)
+    PlayerESPColor = Value
+end)
+
+Pile = ESPTAB:Section("Pile ESP")
+Pile:Toggle("Enabled", function(Value)
+    PileESP = Value
+    if not PileESP then
+        for _, pile in pairs(game.Workspace.Filter.SpawnedPiles:GetChildren()) do
+            if pile:FindFirstChild("ESP") then
+                pile.ESP:Destroy()
+            end
+        end
+    end
+end)
+Pile:Color("Color", function(Value)
+    PileESPColor = Value
+end)
+
+Shopz = ESPTAB:Section("Shop ESP")
+Shopz:Toggle("Enabled", function(Value)
+    ShopESP = Value
+    if not ShopESP then
+        for _, shop in pairs(game.Workspace.Map.Shopz:GetChildren()) do
+            if shop:FindFirstChild("ESP") then
+                shop.ESP:Destroy()
+            end
+        end
+    end
+end)
+Shopz:Color("Color", function(Value)
+    ShopESPColor = Value
+end)
+
+
+local FFArms = false
+SelfSec = ESPTAB:Section("Self")
+
+SelfSec:Toggle("Forcefield Arms", function(Value)
+    local mat = Enum.Material.SmoothPlastic
+    FFArms = Value
+
+    if FFArms then
+        if game.Workspace.CurrentCamera.ViewModel then
+            for _, part in pairs(game.Workspace.CurrentCamera.ViewModel:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Material = Enum.Material.ForceField
+                end
+            end
+        end
+    else
+        if game.Workspace.CurrentCamera.ViewModel then
+            for _, part in pairs(game.Workspace.CurrentCamera.ViewModel:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Material = mat
+                end
+            end
+        end
+    end
+end)
+
+GUI = Window:Tab("SETTINGS")
+GUISEC = GUI:Section("Main")
+GUISEC:Button("Destroy GUI", function()
+    ToolESP = false
+    if not ToolESP then
+        for _, tool in pairs(game.Workspace.Filter.SpawnedTools:GetChildren()) do
+            if tool:FindFirstChild("ESP") then
+                tool.ESP:Destroy()
+            end
+        end
+    end
+    CashESP = false
+    if not CashESP then
+        for _, cash in pairs(game.Workspace.Filter.SpawnedBread:GetChildren()) do
+            if cash:FindFirstChild("ESP") then
+                cash.ESP:Destroy()
+            end
+        end
+    end
+    PlayerESP = false
+    if not PlayerESP then
+        for _, player in pairs(game.Workspace.Characters:GetChildren()) do
+            if player:FindFirstChild("ESP") then
+                player.ESP:Destroy()
+            end
+        end
+    end
+    PileESP = false
+    if not PileESP then
+        for _, pile in pairs(game.Workspace.Filter.SpawnedPiles:GetChildren()) do
+            if pile:FindFirstChild("ESP") then
+                pile.ESP:Destroy()
+            end
+        end
+    end
+    ShopESP = false
+    if not ShopESP then
+        for _, shop in pairs(game.Workspace.Map.Shopz:GetChildren()) do
+            if shop:FindFirstChild("ESP") then
+                shop.ESP:Destroy()
+            end
+        end
+    end
+    FFArms = false
+    if game.Workspace.CurrentCamera.ViewModel then
+        for _, part in ipairs(game.Workspace.CurrentCamera.ViewModel:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Material = Enum.Material.SmoothPlastic
+            end
+        end
+    end
+    CamLockEnabled = false
+    task.wait()
+    game.CoreGui.fem:Destroy()
+end)
+GUISEC:Textbox("GUI Hotkey", function(Value)
+    updateKeybind(Value)
+end)
+
+game["Run Service"].RenderStepped:Connect(function()
+	if ToolESP then
+		local tool = game.Workspace.Filter.SpawnedTools
+		local highlight = Instance.new("Highlight",tool)
+		if not tool:FindFirstChild("ESP") then
+			highlight.Name = "ESP"
+			highlight.FillColor = ToolESPColor
+			highlight.OutlineColor = ToolESPColor
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.Parent = tool
+		else
+			tool.ESP.FillColor = ToolESPColor
+			tool.ESP.OutlineColor = ToolESPColor
+		end
+	end
+
+	if CashESP then
+		local tool = game.Workspace.Filter.SpawnedBread
+		local highlight = Instance.new("Highlight",tool)
+		local cash = tool
+		if not cash:FindFirstChild("ESP") then
+
+			highlight.Name = "ESP"
+			highlight.FillColor = CashESPColor
+			highlight.OutlineColor = CashESPColor
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.Parent = cash
+		else
+			cash.ESP.FillColor = CashESPColor
+			cash.ESP.OutlineColor = CashESPColor
+		end
+	end
+
+	if PlayerESP then
+		local tool = game.Workspace.Characters
+		local highlight = Instance.new("Highlight",tool)
+		local player = tool
+		if not player:FindFirstChild("ESP") then
+
+			highlight.Name = "ESP"
+			highlight.FillColor = PlayerESPColor
+			highlight.OutlineColor = PlayerESPColor
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.Parent = player
+		else
+			player.ESP.FillColor = PlayerESPColor
+			player.ESP.OutlineColor = PlayerESPColor
+		end
+	end
+
+	if ShopESP then
+		local tool = game.Workspace.Map.Shopz
+		local highlight = Instance.new("Highlight",tool)
+		local shop = tool
+		if not shop:FindFirstChild("ESP") then
+
+			highlight.Name = "ESP"
+			highlight.FillColor = ShopESPColor
+			highlight.OutlineColor = ShopESPColor
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.Parent = shop
+		else
+			shop.ESP.FillColor = ShopESPColor
+			shop.ESP.OutlineColor = ShopESPColor
+		end
+	end
+
+	if PileESP then
+		local tool = game.Workspace.Filter.SpawnedPiles
+		local highlight = Instance.new("Highlight",tool)
+		local pile = tool
+		if not pile:FindFirstChild("ESP") then
+
+			highlight.Name = "ESP"
+			highlight.FillColor = PileESPColor
+			highlight.OutlineColor = PileESPColor
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.Parent = pile
+		else
+			pile.ESP.FillColor = PileESPColor
+			pile.ESP.OutlineColor = PileESPColor
+		end
+	end
+end)
+
+CREDITTAB = Window:Tab("CREDITS")
+CRESec = CREDITTAB:Section("CREDITS")
+CRESec:Textbox("To vy.xa for making this script!", function(Value)
+    updateKeybind(Value)
+end)
+CRESec:Button("DISCORD", function()setclipboard("https://discord.gg/6DZgunjPBj")
+toclipboard("https://discord.gg/6DZgunjPBj")
+
+end)
